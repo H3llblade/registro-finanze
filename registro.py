@@ -21,23 +21,17 @@ HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
 # FUNZIONI GITHUB
 # -------------------------------
 def leggi_file_github():
-    """Legge il file JSON da GitHub e lo restituisce come dizionario"""
     r = requests.get(GITHUB_API_URL, headers=HEADERS)
     if r.status_code == 200:
         content = r.json()["content"]
         decoded = base64.b64decode(content).decode("utf-8")
         return json.loads(decoded)
     else:
-        # struttura vuota se il file non esiste
         return {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
 
 def aggiorna_file_github(dati):
-    """Aggiorna o crea il file JSON su GitHub leggendo sempre lo SHA corrente"""
     r = requests.get(GITHUB_API_URL, headers=HEADERS)
-    if r.status_code == 200:
-        sha = r.json()["sha"]
-    else:
-        sha = None
+    sha = r.json()["sha"] if r.status_code == 200 else None
 
     json_str = json.dumps(dati, indent=4)
     json_base64 = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
@@ -62,7 +56,6 @@ def formatta(num):
     return f"{round(num):,}".replace(",", ".")
 
 def registra_movimento(tipo, causale, valore):
-    """Aggiorna session_state e GitHub senza rerun"""
     st.session_state.dati["movimenti"].append({
         "data": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
         "tipo": tipo,
@@ -100,22 +93,24 @@ st.divider()
 def registra_sezione(titolo, tipo):
     st.subheader(titolo)
 
-    # ✅ Inizializza le chiavi se non esistono
+    # Inizializza le chiavi
     if f"{tipo}_valore" not in st.session_state:
         st.session_state[f"{tipo}_valore"] = 0.0
     if f"{tipo}_causale" not in st.session_state:
         st.session_state[f"{tipo}_causale"] = ""
 
-    # widget legati a session_state
+    # widget
     causale = st.text_input(f"Causale {titolo}", key=f"{tipo}_causale")
     valore = st.number_input("Importo (+ / -)", value=st.session_state[f"{tipo}_valore"], key=f"{tipo}_valore")
 
-    if st.button(f"Registra {titolo}", key=f"btn_{tipo}"):
+    def registra_callback():
         if causale.strip():
             registra_movimento(tipo, causale, valore)
-            # reset input
+            # reset input senza conflitti
             st.session_state[f"{tipo}_valore"] = 0.0
             st.session_state[f"{tipo}_causale"] = ""
+
+    st.button(f"Registra {titolo}", key=f"btn_{tipo}", on_click=registra_callback)
 
 registra_sezione("Cassa", "cassa")
 registra_sezione("Soldi Sporchi", "soldi_sporchi")
