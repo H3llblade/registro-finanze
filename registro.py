@@ -6,6 +6,7 @@ import requests
 # CONFIG
 # -------------------------------
 WEBHOOK_URL = st.secrets.get("WEBHOOK_URL")
+st.write("WEBHOOK:", WEBHOOK_URL)
 
 # -------------------------------
 # STATO INIZIALE
