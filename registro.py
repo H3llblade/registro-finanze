@@ -18,6 +18,11 @@ GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO_OWNER}/{GITHUB_REPO
 HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
 
 # -------------------------------
+# CONFIG DISCORD
+# -------------------------------
+WEBHOOK_URL = st.secrets.get("DISCORD_WEBHOOK_URL")  # inserisci qui il tuo webhook Discord
+
+# -------------------------------
 # FUNZIONI GITHUB
 # -------------------------------
 def leggi_file_github():
@@ -44,6 +49,23 @@ def aggiorna_file_github(dati):
         st.error(f"Errore aggiornamento GitHub: {r.json()}")
 
 # -------------------------------
+# INVIO DISCORD
+# -------------------------------
+def invia_discord(tipo, causale, valore, totale):
+    if not WEBHOOK_URL:
+        return
+    try:
+        msg = f"""**{tipo}** registrato!
+
+🕒 {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
+📝 Causale: {causale}
+💰 Importo: {round(valore)} $
+📊 Totale {tipo}: {round(totale)} $"""
+        requests.post(WEBHOOK_URL, json={"content": msg})
+    except Exception as e:
+        st.warning(f"Errore invio Discord: {e}")
+
+# -------------------------------
 # STATO STREAMLIT
 # -------------------------------
 if "dati" not in st.session_state:
@@ -64,6 +86,7 @@ def registra_movimento(tipo, causale, valore):
     })
     st.session_state.dati[tipo] += valore
     aggiorna_file_github(st.session_state.dati)
+    invia_discord(tipo, causale, valore, st.session_state.dati[tipo])
 
 # -------------------------------
 # HEADER
@@ -106,7 +129,6 @@ def registra_sezione(titolo, tipo):
     def registra_callback():
         if causale.strip():
             registra_movimento(tipo, causale, valore)
-            # reset input senza conflitti
             st.session_state[f"{tipo}_valore"] = 0.0
             st.session_state[f"{tipo}_causale"] = ""
 
