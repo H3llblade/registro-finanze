@@ -5,7 +5,7 @@ import requests
 # -------------------------------
 # CONFIG
 # -------------------------------
-WEBHOOK_URL = st.secrets["https://discord.com/api/webhooks/1483783970201145355/QPAjyvY4nFxAvcjlXOjnOec5E8aqymVSO2s2aDTrOW7YkJGmQb5yVkaFn4KqNpS_cc6w"]
+WEBHOOK_URL = st.secrets["WEBHOOK_URL"]
 
 # -------------------------------
 # STATO INIZIALE
