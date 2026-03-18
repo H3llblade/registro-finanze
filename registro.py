@@ -9,8 +9,8 @@ st.set_page_config(layout="wide", page_title="Registro Finanze", page_icon="💰
 # -------------------------------
 # CONFIG GITHUB
 # -------------------------------
-GITHUB_REPO_OWNER = st.secrets["H3llblade"]  # tuo username GitHub
-GITHUB_REPO_NAME = st.secrets["registro-finanze"]    # nome repository
+GITHUB_REPO_OWNER = st.secrets["GITHUB_OWNER"]  # tuo username GitHub
+GITHUB_REPO_NAME = st.secrets["GITHUB_REPO"]    # nome repository
 GITHUB_FILE_PATH = "finanze.json"               # percorso file nel repo
 GITHUB_TOKEN = st.secrets["GITHUB_PAT"]         # token come secret
 
