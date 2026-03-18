@@ -133,6 +133,7 @@ else:
 # -------------------------------
 # PULSANTE RESET REGISTRO
 # -------------------------------
+'''
 st.divider()
 st.subheader("⚠️ Gestione Registro")
 if st.button("Svuota Registro"):
@@ -140,3 +141,4 @@ if st.button("Svuota Registro"):
     st.session_state.dati = {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
     salva_dati(st.session_state.dati)
     st.success("Registro e totali resettati!")
+'''
