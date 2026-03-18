@@ -8,42 +8,32 @@ import requests
 WEBHOOK_URL = st.secrets.get("WEBHOOK_URL")
 
 # -------------------------------
-# STATO INIZIALE
+# STATO
 # -------------------------------
-if "cassa" not in st.session_state:
-    st.session_state.cassa = 0
-
-if "fondo_cassa" not in st.session_state:
-    st.session_state.fondo_cassa = 0
-
-if "soldi_sporchi" not in st.session_state:
-    st.session_state.soldi_sporchi = 0
-
-if "movimenti" not in st.session_state:
-    st.session_state.movimenti = []
+for key in ["cassa", "fondo_cassa", "soldi_sporchi", "movimenti"]:
+    if key not in st.session_state:
+        st.session_state[key] = 0 if key != "movimenti" else []
 
 # -------------------------------
-# FUNZIONI UTILI
+# FUNZIONI
 # -------------------------------
-def formatta(numero):
-    return f"{round(numero):,}".replace(",", ".")
+def formatta(num):
+    return f"{round(num):,}".replace(",", ".")
 
-def invia_discord(messaggio):
-    payload = {"content": messaggio}
+def invia_discord(msg):
+    if not WEBHOOK_URL:
+        return
     try:
-        response = requests.post(WEBHOOK_URL, json=payload)
-        if response.status_code != 204:
-            st.warning(f"Errore Discord: {response.status_code}")
-    except Exception as e:
-        st.error(f"Errore webhook: {e}")
+        requests.post(WEBHOOK_URL, json={"content": msg})
+    except:
+        pass
 
-def aggiungi_movimento(tipo, causale, uscita, ingresso):
+def registra_movimento(tipo, causale, valore):
     st.session_state.movimenti.append({
         "data": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
         "tipo": tipo,
         "causale": causale,
-        "uscita": uscita,
-        "ingresso": ingresso
+        "valore": valore
     })
 
 # -------------------------------
@@ -52,120 +42,121 @@ def aggiungi_movimento(tipo, causale, uscita, ingresso):
 st.title("💰 Registro Finanze")
 
 # ===============================
+# 📊 DASHBOARD (IN ALTO)
+# ===============================
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    with st.container():
+        st.subheader("💰 CASSA")
+        st.metric("", f"{formatta(st.session_state.cassa)} €")
+
+with col2:
+    with st.container():
+        st.subheader("💸 SOLDI SPORCHI")
+        st.metric("", f"{formatta(st.session_state.soldi_sporchi)} €")
+
+with col3:
+    with st.container():
+        st.subheader("💼 FONDO CASSA")
+        st.metric("", f"{formatta(st.session_state.fondo_cassa)} €")
+
+st.divider()
+
+# ===============================
 # 🧾 MOVIMENTO CASSA
 # ===============================
 st.subheader("🧾 Movimento Cassa")
-st.divider()
 
-causale = st.text_input("Causale")
-prelievo = st.number_input("Prelievo", value=0.0)
-deposito = st.number_input("Deposito (può essere negativo)", value=0.0)
+causale_cassa = st.text_input("Causale Cassa")
+valore_cassa = st.number_input("Importo Cassa (+ / -)", value=0.0, key="cassa_input")
 
-if st.button("Registra Movimento"):
-    if causale.strip() == "":
-        st.error("Inserisci una causale valida")
-    else:
-        # Logica
-        st.session_state.cassa += deposito
-        st.session_state.soldi_sporchi -= prelievo
+if st.button("Registra Movimento Cassa"):
+    if causale_cassa.strip():
+        st.session_state.cassa += valore_cassa
+        registra_movimento("CASSA", causale_cassa, valore_cassa)
 
-        aggiungi_movimento("CASSA", causale, prelievo, deposito)
+        msg = f"""🧾 Movimento Cassa
 
-        # Discord
-        data = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+🕒 {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
+📝 {causale_cassa}
+💰 Importo: {formatta(valore_cassa)} €
 
-        messaggio = f"""🧾 Nuovo movimento registrato
-
-🕒 {data}
-📝 Causale: {causale}
-💸 Prelievo: {formatta(prelievo)} €
-💰 Deposito: {formatta(deposito)} €
-📂 Destinazione: CASSA
-
-📊 Situazione aggiornata:
-
-💰 CASSA: {formatta(st.session_state.cassa)} €
-💼 FONDO CASSA: {formatta(st.session_state.fondo_cassa)} €
-💸 SOLDI SPORCHI: {formatta(st.session_state.soldi_sporchi)} €
+📊 Totale Cassa: {formatta(st.session_state.cassa)} €
 """
-        invia_discord(messaggio)
+        invia_discord(msg)
 
-        st.success("Movimento registrato!")
+        st.success("Movimento cassa registrato")
 
-# ===============================
-# 💼 FONDO CASSA
-# ===============================
-st.subheader("💼 Fondo Cassa")
 st.divider()
-
-valore_fondo = st.number_input("Importo da aggiungere", value=0.0, key="fondo")
-
-if st.button("Aggiorna Fondo Cassa"):
-    st.session_state.fondo_cassa += valore_fondo
-
-    aggiungi_movimento("FONDO CASSA", "Fondo Cassa", 0, valore_fondo)
-
-    # Discord
-    data = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-
-    messaggio = f"""💼 Fondo Cassa aggiornato
-
-🕒 {data}
-💰 Importo aggiunto: {formatta(valore_fondo)} €
-📈 Totale Fondo Cassa: {formatta(st.session_state.fondo_cassa)} €
-"""
-    invia_discord(messaggio)
-
-    st.success("Fondo cassa aggiornato!")
 
 # ===============================
 # 💸 SOLDI SPORCHI
 # ===============================
 st.subheader("💸 Soldi Sporchi")
-st.divider()
 
-valore_sporchi = st.number_input("Importo da aggiungere", value=0.0, key="sporchi")
+causale_sporchi = st.text_input("Causale Soldi Sporchi")
+valore_sporchi = st.number_input("Importo (+ / -)", value=0.0, key="sporchi_input")
 
-if st.button("Aggiungi Soldi Sporchi"):
-    st.session_state.soldi_sporchi += valore_sporchi
+if st.button("Registra Soldi Sporchi"):
+    if causale_sporchi.strip():
+        st.session_state.soldi_sporchi += valore_sporchi
+        registra_movimento("SOLDI SPORCHI", causale_sporchi, valore_sporchi)
 
-    aggiungi_movimento("FONDO CASSA", "Aggiunta Soldi Sporchi", 0, valore_sporchi)
+        msg = f"""💸 Soldi Sporchi
 
-    # Discord
-    data = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+🕒 {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
+📝 {causale_sporchi}
+💰 Importo: {formatta(valore_sporchi)} €
 
-    messaggio = f"""💸 Soldi Sporchi aggiornati
-
-🕒 {data}
-💰 Importo aggiunto: {formatta(valore_sporchi)} €
 📊 Totale: {formatta(st.session_state.soldi_sporchi)} €
 """
-    invia_discord(messaggio)
+        invia_discord(msg)
 
-    st.success("Soldi sporchi aggiornati!")
+        st.success("Movimento soldi sporchi registrato")
 
-# ===============================
-# 📊 DASHBOARD
-# ===============================
-st.subheader("📊 Situazione Attuale")
 st.divider()
 
-st.write(f"💰 CASSA: {formatta(st.session_state.cassa)} €")
-st.write(f"💼 FONDO CASSA: {formatta(st.session_state.fondo_cassa)} €")
-st.write(f"💸 SOLDI SPORCHI: {formatta(st.session_state.soldi_sporchi)} €")
+# ===============================
+# 💼 FONDO CASSA
+# ===============================
+st.subheader("💼 Fondo Cassa")
 
-# ===============================
-# 📋 STORICO
-# ===============================
-st.subheader("📋 Storico Movimenti")
+causale_fondo = st.text_input("Causale Fondo Cassa")
+valore_fondo = st.number_input("Importo (+ / -)", value=0.0, key="fondo_input")
+
+if st.button("Registra Fondo Cassa"):
+    if causale_fondo.strip():
+        st.session_state.fondo_cassa += valore_fondo
+        registra_movimento("FONDO CASSA", causale_fondo, valore_fondo)
+
+        msg = f"""💼 Fondo Cassa
+
+🕒 {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
+📝 {causale_fondo}
+💰 Importo: {formatta(valore_fondo)} €
+
+📊 Totale: {formatta(st.session_state.fondo_cassa)} €
+"""
+        invia_discord(msg)
+
+        st.success("Fondo cassa aggiornato")
+
 st.divider()
 
-for mov in reversed(st.session_state.movimenti):
-    st.write(f"""
+# ===============================
+# 📋 REGISTRO MOVIMENTI
+# ===============================
+st.subheader("📋 Registro Movimenti")
+
+if st.session_state.movimenti:
+    for mov in reversed(st.session_state.movimenti):
+        st.write(f"""
 🕒 {mov['data']}  
 📂 {mov['tipo']}  
 📝 {mov['causale']}  
-💸 Uscita: {formatta(mov['uscita'])} €  
-💰 Entrata: {formatta(mov['ingresso'])} €  
+💰 Importo: {formatta(mov['valore'])} €  
 """)
-    st.divider()
+        st.divider()
+else:
+    st.info("Nessun movimento registrato")
