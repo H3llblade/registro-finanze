@@ -9,10 +9,10 @@ st.set_page_config(layout="wide", page_title="Registro Finanze", page_icon="💰
 # -------------------------------
 # CONFIG GITHUB
 # -------------------------------
-GITHUB_REPO_OWNER = st.secrets["GITHUB_OWNER"]  # tuo username GitHub
-GITHUB_REPO_NAME = st.secrets["GITHUB_REPO"]    # nome repository
-GITHUB_FILE_PATH = "finanze.json"               # percorso file nel repo
-GITHUB_TOKEN = st.secrets["GITHUB_PAT"]         # token come secret
+GITHUB_REPO_OWNER = st.secrets["GITHUB_OWNER"]
+GITHUB_REPO_NAME  = st.secrets["GITHUB_REPO"]
+GITHUB_FILE_PATH  = "finanze.json"
+GITHUB_TOKEN      = st.secrets["GITHUB_PAT"]
 
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}/contents/{GITHUB_FILE_PATH}"
 HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
@@ -21,14 +21,13 @@ HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
 # FUNZIONI GITHUB
 # -------------------------------
 def leggi_file_github():
-    """Legge il file JSON da GitHub e lo restituisce come dizionario"""
+    """Legge il file JSON da GitHub e lo restituisce come dizionario e SHA"""
     r = requests.get(GITHUB_API_URL, headers=HEADERS)
     if r.status_code == 200:
         content = r.json()["content"]
         decoded = base64.b64decode(content).decode("utf-8")
         return json.loads(decoded), r.json()["sha"]
     else:
-        # Se non esiste, crea struttura vuota
         dati = {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
         return dati, None
 
@@ -40,11 +39,8 @@ def aggiorna_file_github(dati, sha=None):
     if sha:
         payload["sha"] = sha
     r = requests.put(GITHUB_API_URL, headers=HEADERS, json=payload)
-    if r.status_code in [200, 201]:
-        return True
-    else:
+    if r.status_code not in [200, 201]:
         st.error(f"Errore aggiornamento GitHub: {r.json()}")
-        return False
 
 # -------------------------------
 # STATO STREAMLIT
@@ -53,13 +49,13 @@ if "dati" not in st.session_state:
     st.session_state.dati, st.session_state.sha = leggi_file_github()
 
 # -------------------------------
-# FUNZIONI UTILI
+# UTILI
 # -------------------------------
 def formatta(num):
     return f"{round(num):,}".replace(",", ".")
 
 def registra_movimento(tipo, causale, valore):
-    # aggiorna session_state
+    """Aggiorna session_state e GitHub senza rerun"""
     st.session_state.dati["movimenti"].append({
         "data": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
         "tipo": tipo,
@@ -67,10 +63,8 @@ def registra_movimento(tipo, causale, valore):
         "valore": valore
     })
     st.session_state.dati[tipo] += valore
-    # aggiorna GitHub
+    # aggiorna su GitHub
     aggiorna_file_github(st.session_state.dati, st.session_state.sha)
-    # forza rerun per aggiornare dashboard
-    st.experimental_rerun()
 
 # -------------------------------
 # HEADER
@@ -104,7 +98,7 @@ def registra_sezione(titolo, tipo):
     if st.button(f"Registra {titolo}", key=f"btn_{tipo}"):
         if causale.strip():
             registra_movimento(tipo, causale, valore)
-            # reset input
+            # reset input per nuovi valori
             st.session_state[f"{tipo}_valore"] = 0.0
 
 registra_sezione("Cassa", "cassa")
@@ -139,4 +133,3 @@ st.subheader("⚠️ Gestione Registro")
 if st.button("Svuota Registro"):
     st.session_state.dati = {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
     aggiorna_file_github(st.session_state.dati, st.session_state.sha)
-    st.experimental_rerun()
