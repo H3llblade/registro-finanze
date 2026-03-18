@@ -70,17 +70,17 @@ col1, col2, col3 = st.columns([1,1,1], gap="large")
 
 with col1:
     st.markdown(
-        f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💰 CASSA</h3><h2>{formatta(st.session_state.dati['cassa'])} €</h2></div>", unsafe_allow_html=True
+        f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💰 CASSA</h3><h2>{formatta(st.session_state.dati['cassa'])} $</h2></div>", unsafe_allow_html=True
     )
 
 with col2:
     st.markdown(
-        f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💸 SOLDI SPORCHI</h3><h2>{formatta(st.session_state.dati['soldi_sporchi'])} €</h2></div>", unsafe_allow_html=True
+        f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💸 SOLDI SPORCHI</h3><h2>{formatta(st.session_state.dati['soldi_sporchi'])} $</h2></div>", unsafe_allow_html=True
     )
 
 with col3:
     st.markdown(
-        f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💼 FONDO CASSA</h3><h2>{formatta(st.session_state.dati['fondo_cassa'])} €</h2></div>", unsafe_allow_html=True
+        f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💼 FONDO CASSA</h3><h2>{formatta(st.session_state.dati['fondo_cassa'])} $</h2></div>", unsafe_allow_html=True
     )
 
 st.divider()
@@ -100,8 +100,8 @@ def registra_sezione(titolo, key_input, tipo):
             msg = f"""🧾 {titolo}
 🕒 {movimento['data']}
 📝 {movimento['causale']}
-💰 Importo: {formatta(valore)} €
-📊 Totale {titolo}: {formatta(st.session_state.dati[tipo])} €
+💰 Importo: {formatta(valore)} $
+📊 Totale {titolo}: {formatta(st.session_state.dati[tipo])} $
 """
             invia_discord(msg)
             st.success(f"{titolo} registrato!")
@@ -125,7 +125,7 @@ if movimenti:
             f"<b>🕒 {mov['data']}</b><br>"
             f"📂 <b>{mov['tipo']}</b><br>"
             f"📝 {mov['causale']}<br>"
-            f"💰 Importo: {formatta(mov['valore'])} €"
+            f"💰 Importo: {formatta(mov['valore'])} $"
             f"</div>", unsafe_allow_html=True
         )
 else:
