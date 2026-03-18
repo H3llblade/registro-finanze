@@ -18,7 +18,6 @@ def carica_dati():
     if os.path.exists(FILE_DATI):
         with open(FILE_DATI, "r") as f:
             return json.load(f)
-    # Se non esiste, inizializza i dati
     return {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
 
 def salva_dati(dati):
@@ -54,6 +53,7 @@ def registra_movimento(tipo, causale, valore):
         "valore": valore
     }
     st.session_state.dati["movimenti"].append(movimento)
+    st.session_state.dati[tipo] += valore
     salva_dati(st.session_state.dati)
     return movimento
 
@@ -67,50 +67,34 @@ st.divider()
 # DASHBOARD
 # ===============================
 col1, col2, col3 = st.columns([1,1,1], gap="large")
-
 with col1:
-    st.markdown(
-        f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💰 CASSA</h3><h2>{formatta(st.session_state.dati['cassa'])} $</h2></div>", unsafe_allow_html=True
-    )
-
+    st.markdown(f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💰 CASSA</h3><h2>{formatta(st.session_state.dati['cassa'])} $</h2></div>", unsafe_allow_html=True)
 with col2:
-    st.markdown(
-        f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💸 SOLDI SPORCHI</h3><h2>{formatta(st.session_state.dati['soldi_sporchi'])} $</h2></div>", unsafe_allow_html=True
-    )
-
+    st.markdown(f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💸 SOLDI SPORCHI</h3><h2>{formatta(st.session_state.dati['soldi_sporchi'])} $</h2></div>", unsafe_allow_html=True)
 with col3:
-    st.markdown(
-        f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💼 FONDO CASSA</h3><h2>{formatta(st.session_state.dati['fondo_cassa'])} $</h2></div>", unsafe_allow_html=True
-    )
+    st.markdown(f"<div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'><h3>💼 FONDO CASSA</h3><h2>{formatta(st.session_state.dati['fondo_cassa'])} $</h2></div>", unsafe_allow_html=True)
 
 st.divider()
 
 # ===============================
 # FUNZIONE REGISTRA SEZIONE
 # ===============================
-def registra_sezione(titolo, key_input, tipo):
+def registra_sezione(titolo, tipo):
     st.subheader(titolo)
-    causale = st.text_input(f"Causale {titolo}", key=f"{key_input}_causale")
-    valore = st.number_input("Importo (+ / -)", value=0.0, key=f"{key_input}_valore")
-    if st.button(f"Registra {titolo}", key=f"btn_{key_input}"):
+    causale = st.text_input(f"Causale {titolo}", key=f"{tipo}_causale")
+    valore = st.number_input("Importo (+ / -)", value=0.0, key=f"{tipo}_valore")
+    if st.button(f"Registra {titolo}", key=f"btn_{tipo}"):
         if causale.strip():
-            st.session_state.dati[tipo] += valore
-            movimento = registra_movimento(tipo, causale, valore)
+            registra_movimento(tipo, causale, valore)
+            # Reset del campo numero per inserire subito un nuovo valore
+            st.session_state[f"{tipo}_valore"] = 0.0
+            # Forza il rerun per aggiornare immediatamente dashboard e totali
+            st.experimental_rerun()
 
-            msg = f"""🧾 {titolo}
-🕒 {movimento['data']}
-📝 {movimento['causale']}
-💰 Importo: {formatta(valore)} $
-📊 Totale {titolo}: {formatta(st.session_state.dati[tipo])} $
-"""
-            invia_discord(msg)
-            st.success(f"{titolo} registrato!")
-            salva_dati(st.session_state.dati)
+registra_sezione("Cassa", "cassa")
+registra_sezione("Soldi Sporchi", "soldi_sporchi")
+registra_sezione("Fondo Cassa", "fondo_cassa")
 
-st.divider()
-registra_sezione("Cassa", "cassa", "cassa")
-registra_sezione("Soldi Sporchi", "sporchi", "soldi_sporchi")
-registra_sezione("Fondo Cassa", "fondo", "fondo_cassa")
 st.divider()
 
 # ===============================
@@ -130,13 +114,13 @@ if movimenti:
         )
 else:
     st.info("Nessun movimento registrato")
-# -------------------------------
+
+# ===============================
 # PULSANTE RESET REGISTRO
-# -------------------------------
-# st.divider()
-# st.subheader("⚠️ Gestione Registro")
-# if st.button("Svuota Registro"):
-    # Azzera i dati
-#    st.session_state.dati = {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
-#    salva_dati(st.session_state.dati)
-#    st.success("Registro e totali resettati!")
+# ===============================
+st.divider()
+st.subheader("⚠️ Gestione Registro")
+if st.button("Svuota Registro"):
+    st.session_state.dati = {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
+    salva_dati(st.session_state.dati)
+    st.experimental_rerun()
