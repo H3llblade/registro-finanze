@@ -49,14 +49,22 @@ def aggiorna_file_github(dati):
         st.error(f"Errore aggiornamento GitHub: {r.json()}")
 
 # -------------------------------
-# INVIO DISCORD CON DEBUG
+# INVIO DISCORD                 
 # -------------------------------
 def invia_discord(tipo, causale, valore, totale):
     if not WEBHOOK_URL:
         st.warning("Webhook Discord non impostato!")
         return
     try:
-        msg = f"{tipo} registrato!\nCausale: {causale}\nImporto: {round(valore)} $\nTotale {tipo}: {round(totale)} $\n{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
+        # Aggiunta di emoji per rendere il messaggio più leggibile
+        emoji_tipo = "💰" if tipo == "cassa" else "💸" if tipo == "soldi_sporchi" else "💼"
+        msg = (
+            f"{emoji_tipo} **{tipo.upper()} registrato!**\n"
+            f"📝 Causale: {causale}\n"
+            f"💵 Importo: {round(valore)} $\n"
+            f"📊 Totale {tipo}: {round(totale)} $\n"
+            f"🕒 {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
+        )
         r = requests.post(WEBHOOK_URL, json={"content": msg}, timeout=5)
         if r.status_code == 204:
             st.success(f"Messaggio Discord inviato correttamente per {tipo}")
