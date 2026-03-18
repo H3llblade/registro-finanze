@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import datetime
 import requests
 
+st.set_page_config(layout="wide")
 # -------------------------------
 # CONFIG
 # -------------------------------
