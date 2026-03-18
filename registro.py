@@ -33,21 +33,18 @@ def leggi_file_github():
 
 def aggiorna_file_github(dati):
     """Aggiorna o crea il file JSON su GitHub leggendo sempre lo SHA corrente"""
-    # leggi SHA aggiornato
     r = requests.get(GITHUB_API_URL, headers=HEADERS)
     if r.status_code == 200:
         sha = r.json()["sha"]
     else:
         sha = None
 
-    # prepara payload
     json_str = json.dumps(dati, indent=4)
     json_base64 = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
     payload = {"message": "Aggiornamento finanze", "content": json_base64}
     if sha:
         payload["sha"] = sha
 
-    # invia PUT
     r = requests.put(GITHUB_API_URL, headers=HEADERS, json=payload)
     if r.status_code not in [200, 201]:
         st.error(f"Errore aggiornamento GitHub: {r.json()}")
@@ -73,7 +70,6 @@ def registra_movimento(tipo, causale, valore):
         "valore": valore
     })
     st.session_state.dati[tipo] += valore
-    # aggiorna su GitHub
     aggiorna_file_github(st.session_state.dati)
 
 # -------------------------------
@@ -103,12 +99,23 @@ st.divider()
 # ===============================
 def registra_sezione(titolo, tipo):
     st.subheader(titolo)
+
+    # ✅ Inizializza le chiavi se non esistono
+    if f"{tipo}_valore" not in st.session_state:
+        st.session_state[f"{tipo}_valore"] = 0.0
+    if f"{tipo}_causale" not in st.session_state:
+        st.session_state[f"{tipo}_causale"] = ""
+
+    # widget legati a session_state
     causale = st.text_input(f"Causale {titolo}", key=f"{tipo}_causale")
-    valore = st.number_input("Importo (+ / -)", value=0.0, key=f"{tipo}_valore")
+    valore = st.number_input("Importo (+ / -)", value=st.session_state[f"{tipo}_valore"], key=f"{tipo}_valore")
+
     if st.button(f"Registra {titolo}", key=f"btn_{tipo}"):
         if causale.strip():
             registra_movimento(tipo, causale, valore)
-            st.session_state[f"{tipo}_valore"] = 0.0  # reset input
+            # reset input
+            st.session_state[f"{tipo}_valore"] = 0.0
+            st.session_state[f"{tipo}_causale"] = ""
 
 registra_sezione("Cassa", "cassa")
 registra_sezione("Soldi Sporchi", "soldi_sporchi")
