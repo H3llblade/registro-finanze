@@ -167,7 +167,6 @@ else:
 # ===============================
 # PULSANTE RESET
 # ===============================
-reset_registro()
 def reset_registro():
     if st.button("🗑️ Svuota Registro"):
         st.session_state.dati = {
@@ -178,3 +177,4 @@ def reset_registro():
         }
         aggiorna_file_github(st.session_state.dati)
         st.success("Registro svuotato correttamente!")
+reset_registro()
