@@ -20,7 +20,7 @@ HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
 # -------------------------------
 # CONFIG DISCORD
 # -------------------------------
-WEBHOOK_URL = st.secrets.get("https://discord.com/api/webhooks/1483796870991052840/-01K4rORC8Fyxi9WUVuCPyj-lhHz9dpFYUUYsRhkKyzHO9c_Yo91THnx59ApQGr-UBrU")  # inserisci qui il tuo webhook Discord
+WEBHOOK_URL = st.secrets.get("DISCORD_WEBHOOK_URL")  # inserisci qui il tuo webhook Discord
 
 # -------------------------------
 # FUNZIONI GITHUB
