@@ -2,11 +2,7 @@ import streamlit as st
 from datetime import datetime
 import requests
 
-st.set_page_config(layout="wide")
-# -------------------------------
-# CONFIG
-# -------------------------------
-WEBHOOK_URL = st.secrets.get("WEBHOOK_URL")
+st.set_page_config(layout="wide", page_title="Registro Finanze", page_icon="💰")
 
 # -------------------------------
 # STATO
@@ -22,6 +18,7 @@ def formatta(num):
     return f"{round(num):,}".replace(",", ".")
 
 def invia_discord(msg):
+    WEBHOOK_URL = st.secrets.get("WEBHOOK_URL")
     if not WEBHOOK_URL:
         return
     try:
@@ -40,124 +37,90 @@ def registra_movimento(tipo, causale, valore):
 # -------------------------------
 # HEADER
 # -------------------------------
-st.title("💰 Registro Finanze")
+st.markdown("<h1 style='text-align:center;color:white;'>💰 Registro Finanze</h1>", unsafe_allow_html=True)
+st.divider()
 
 # ===============================
 # 📊 DASHBOARD (IN ALTO)
 # ===============================
-col1, col2, col3 = st.columns(3)
+col1, col2, col3 = st.columns([1,1,1], gap="large")
 
 with col1:
-    with st.container():
-        st.subheader("💰 CASSA")
-        st.metric("", f"{formatta(st.session_state.cassa)} €")
+    st.markdown(
+        f"""
+        <div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'>
+            <h3>💰 CASSA</h3>
+            <h2>{formatta(st.session_state.cassa)} €</h2>
+        </div>
+        """, unsafe_allow_html=True
+    )
 
 with col2:
-    with st.container():
-        st.subheader("💸 SOLDI SPORCHI")
-        st.metric("", f"{formatta(st.session_state.soldi_sporchi)} €")
+    st.markdown(
+        f"""
+        <div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'>
+            <h3>💸 SOLDI SPORCHI</h3>
+            <h2>{formatta(st.session_state.soldi_sporchi)} €</h2>
+        </div>
+        """, unsafe_allow_html=True
+    )
 
 with col3:
-    with st.container():
-        st.subheader("💼 FONDO CASSA")
-        st.metric("", f"{formatta(st.session_state.fondo_cassa)} €")
+    st.markdown(
+        f"""
+        <div style='background-color:#1E1E1E;padding:20px;border-radius:10px;text-align:center;'>
+            <h3>💼 FONDO CASSA</h3>
+            <h2>{formatta(st.session_state.fondo_cassa)} €</h2>
+        </div>
+        """, unsafe_allow_html=True
+    )
 
 st.divider()
 
 # ===============================
-# 🧾 MOVIMENTO CASSA
+# 🧾 MOVIMENTI (CASSA / SOLDI SPORCHI / FONDO CASSA)
 # ===============================
-st.subheader("🧾 Movimento Cassa")
 
-causale_cassa = st.text_input("Causale Cassa")
-valore_cassa = st.number_input("Importo Cassa (+ / -)", value=0.0, key="cassa_input")
-
-if st.button("Registra Movimento Cassa"):
-    if causale_cassa.strip():
-        st.session_state.cassa += valore_cassa
-        registra_movimento("CASSA", causale_cassa, valore_cassa)
-
-        msg = f"""🧾 Movimento Cassa
+def registra_sezione(titolo, key_input, tipo, st_input, numero_input):
+    st.subheader(titolo)
+    causale = st_input(f"Causale {titolo}", key=f"{key_input}_causale")
+    valore = numero_input(f"Importo (+ / -)", value=0.0, key=f"{key_input}_valore")
+    if st.button(f"Registra {titolo}", key=f"btn_{key_input}"):
+        if causale.strip():
+            st.session_state[tipo] += valore
+            registra_movimento(tipo, causale, valore)
+            msg = f"""🧾 {titolo}
 
 🕒 {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
-📝 {causale_cassa}
-💰 Importo: {formatta(valore_cassa)} €
+📝 {causale}
+💰 Importo: {formatta(valore)} €
 
-📊 Totale Cassa: {formatta(st.session_state.cassa)} €
+📊 Totale {titolo}: {formatta(st.session_state[tipo])} €
 """
-        invia_discord(msg)
-
-        st.success("Movimento cassa registrato")
+            invia_discord(msg)
+            st.success(f"{titolo} registrato!")
 
 st.divider()
-
-# ===============================
-# 💸 SOLDI SPORCHI
-# ===============================
-st.subheader("💸 Soldi Sporchi")
-
-causale_sporchi = st.text_input("Causale Soldi Sporchi")
-valore_sporchi = st.number_input("Importo (+ / -)", value=0.0, key="sporchi_input")
-
-if st.button("Registra Soldi Sporchi"):
-    if causale_sporchi.strip():
-        st.session_state.soldi_sporchi += valore_sporchi
-        registra_movimento("SOLDI SPORCHI", causale_sporchi, valore_sporchi)
-
-        msg = f"""💸 Soldi Sporchi
-
-🕒 {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
-📝 {causale_sporchi}
-💰 Importo: {formatta(valore_sporchi)} €
-
-📊 Totale: {formatta(st.session_state.soldi_sporchi)} €
-"""
-        invia_discord(msg)
-
-        st.success("Movimento soldi sporchi registrato")
-
-st.divider()
-
-# ===============================
-# 💼 FONDO CASSA
-# ===============================
-st.subheader("💼 Fondo Cassa")
-
-causale_fondo = st.text_input("Causale Fondo Cassa")
-valore_fondo = st.number_input("Importo (+ / -)", value=0.0, key="fondo_input")
-
-if st.button("Registra Fondo Cassa"):
-    if causale_fondo.strip():
-        st.session_state.fondo_cassa += valore_fondo
-        registra_movimento("FONDO CASSA", causale_fondo, valore_fondo)
-
-        msg = f"""💼 Fondo Cassa
-
-🕒 {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
-📝 {causale_fondo}
-💰 Importo: {formatta(valore_fondo)} €
-
-📊 Totale: {formatta(st.session_state.fondo_cassa)} €
-"""
-        invia_discord(msg)
-
-        st.success("Fondo cassa aggiornato")
-
+registra_sezione("Cassa", "cassa", "cassa", st.text_input, st.number_input)
+registra_sezione("Soldi Sporchi", "sporchi", "soldi_sporchi", st.text_input, st.number_input)
+registra_sezione("Fondo Cassa", "fondo", "fondo_cassa", st.text_input, st.number_input)
 st.divider()
 
 # ===============================
 # 📋 REGISTRO MOVIMENTI
 # ===============================
 st.subheader("📋 Registro Movimenti")
-
 if st.session_state.movimenti:
     for mov in reversed(st.session_state.movimenti):
-        st.write(f"""
-🕒 {mov['data']}  
-📂 {mov['tipo']}  
-📝 {mov['causale']}  
-💰 Importo: {formatta(mov['valore'])} €  
-""")
-        st.divider()
+        st.markdown(
+            f"""
+            <div style='background-color:#2C2C2C;padding:15px;border-radius:10px;margin-bottom:10px;'>
+                <b>🕒 {mov['data']}</b><br>
+                📂 <b>{mov['tipo']}</b><br>
+                📝 {mov['causale']}<br>
+                💰 Importo: {formatta(mov['valore'])} €
+            </div>
+            """, unsafe_allow_html=True
+        )
 else:
     st.info("Nessun movimento registrato")
