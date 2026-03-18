@@ -5,6 +5,7 @@ import json
 import os
 
 st.set_page_config(layout="wide", page_title="Registro Finanze", page_icon="💰")
+token = st.secrets["GITHUB_PAT"]
 
 # -------------------------------
 # FILE DI SALVATAGGIO
