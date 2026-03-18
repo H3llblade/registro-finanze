@@ -20,7 +20,7 @@ HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
 # -------------------------------
 # CONFIG DISCORD
 # -------------------------------
-WEBHOOK_URL = st.secrets.get("DISCORD_WEBHOOK_URL")  # inserisci qui il tuo webhook Discord
+WEBHOOK_URL = st.secrets.get("DISCORD_WEBHOOK_URL")  # il tuo webhook Discord
 
 # -------------------------------
 # FUNZIONI GITHUB
@@ -49,21 +49,21 @@ def aggiorna_file_github(dati):
         st.error(f"Errore aggiornamento GitHub: {r.json()}")
 
 # -------------------------------
-# INVIO DISCORD
+# INVIO DISCORD CON DEBUG
 # -------------------------------
 def invia_discord(tipo, causale, valore, totale):
     if not WEBHOOK_URL:
+        st.warning("Webhook Discord non impostato!")
         return
     try:
-        msg = f"""**{tipo}** registrato!
-
-🕒 {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
-📝 Causale: {causale}
-💰 Importo: {round(valore)} $
-📊 Totale {tipo}: {round(totale)} $"""
-        requests.post(WEBHOOK_URL, json={"content": msg})
+        msg = f"{tipo} registrato!\nCausale: {causale}\nImporto: {round(valore)} $\nTotale {tipo}: {round(totale)} $\n{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}"
+        r = requests.post(WEBHOOK_URL, json={"content": msg}, timeout=5)
+        if r.status_code == 204:
+            st.success(f"Messaggio Discord inviato correttamente per {tipo}")
+        else:
+            st.error(f"Errore invio Discord: status {r.status_code} - {r.text}")
     except Exception as e:
-        st.warning(f"Errore invio Discord: {e}")
+        st.error(f"Eccezione invio Discord: {e}")
 
 # -------------------------------
 # STATO STREAMLIT
@@ -116,13 +116,11 @@ st.divider()
 def registra_sezione(titolo, tipo):
     st.subheader(titolo)
 
-    # Inizializza le chiavi
     if f"{tipo}_valore" not in st.session_state:
         st.session_state[f"{tipo}_valore"] = 0.0
     if f"{tipo}_causale" not in st.session_state:
         st.session_state[f"{tipo}_causale"] = ""
 
-    # widget
     causale = st.text_input(f"Causale {titolo}", key=f"{tipo}_causale")
     valore = st.number_input("Importo (+ / -)", value=st.session_state[f"{tipo}_valore"], key=f"{tipo}_valore")
 
