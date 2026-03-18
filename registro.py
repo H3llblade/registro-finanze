@@ -167,8 +167,14 @@ else:
 # ===============================
 # PULSANTE RESET
 # ===============================
-st.divider()
-st.subheader("⚠️ Gestione Registro")
-if st.button("Svuota Registro"):
-    st.session_state.dati = {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
-    aggiorna_file_github(st.session_state.dati)
+reset_registro()
+def reset_registro():
+    if st.button("🗑️ Svuota Registro"):
+        st.session_state.dati = {
+            "cassa": 0,
+            "fondo_cassa": 0,
+            "soldi_sporchi": 0,
+            "movimenti": []
+        }
+        aggiorna_file_github(st.session_state.dati)
+        st.success("Registro svuotato correttamente!")
