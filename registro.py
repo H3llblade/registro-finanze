@@ -21,23 +21,33 @@ HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
 # FUNZIONI GITHUB
 # -------------------------------
 def leggi_file_github():
-    """Legge il file JSON da GitHub e lo restituisce come dizionario e SHA"""
+    """Legge il file JSON da GitHub e lo restituisce come dizionario"""
     r = requests.get(GITHUB_API_URL, headers=HEADERS)
     if r.status_code == 200:
         content = r.json()["content"]
         decoded = base64.b64decode(content).decode("utf-8")
-        return json.loads(decoded), r.json()["sha"]
+        return json.loads(decoded)
     else:
-        dati = {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
-        return dati, None
+        # struttura vuota se il file non esiste
+        return {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
 
-def aggiorna_file_github(dati, sha=None):
-    """Aggiorna o crea il file JSON su GitHub"""
+def aggiorna_file_github(dati):
+    """Aggiorna o crea il file JSON su GitHub leggendo sempre lo SHA corrente"""
+    # leggi SHA aggiornato
+    r = requests.get(GITHUB_API_URL, headers=HEADERS)
+    if r.status_code == 200:
+        sha = r.json()["sha"]
+    else:
+        sha = None
+
+    # prepara payload
     json_str = json.dumps(dati, indent=4)
     json_base64 = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
     payload = {"message": "Aggiornamento finanze", "content": json_base64}
     if sha:
         payload["sha"] = sha
+
+    # invia PUT
     r = requests.put(GITHUB_API_URL, headers=HEADERS, json=payload)
     if r.status_code not in [200, 201]:
         st.error(f"Errore aggiornamento GitHub: {r.json()}")
@@ -46,7 +56,7 @@ def aggiorna_file_github(dati, sha=None):
 # STATO STREAMLIT
 # -------------------------------
 if "dati" not in st.session_state:
-    st.session_state.dati, st.session_state.sha = leggi_file_github()
+    st.session_state.dati = leggi_file_github()
 
 # -------------------------------
 # UTILI
@@ -64,7 +74,7 @@ def registra_movimento(tipo, causale, valore):
     })
     st.session_state.dati[tipo] += valore
     # aggiorna su GitHub
-    aggiorna_file_github(st.session_state.dati, st.session_state.sha)
+    aggiorna_file_github(st.session_state.dati)
 
 # -------------------------------
 # HEADER
@@ -98,8 +108,7 @@ def registra_sezione(titolo, tipo):
     if st.button(f"Registra {titolo}", key=f"btn_{tipo}"):
         if causale.strip():
             registra_movimento(tipo, causale, valore)
-            # reset input per nuovi valori
-            st.session_state[f"{tipo}_valore"] = 0.0
+            st.session_state[f"{tipo}_valore"] = 0.0  # reset input
 
 registra_sezione("Cassa", "cassa")
 registra_sezione("Soldi Sporchi", "soldi_sporchi")
@@ -132,4 +141,4 @@ st.divider()
 st.subheader("⚠️ Gestione Registro")
 if st.button("Svuota Registro"):
     st.session_state.dati = {"cassa": 0, "fondo_cassa": 0, "soldi_sporchi": 0, "movimenti": []}
-    aggiorna_file_github(st.session_state.dati, st.session_state.sha)
+    aggiorna_file_github(st.session_state.dati)
