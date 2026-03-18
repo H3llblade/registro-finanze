@@ -1,5 +1,5 @@
 {
-    "cassa": 0,
+    "cassa": 1111110.0,
     "fondo_cassa": 0,
     "soldi_sporchi": 100000000.0,
     "movimenti": [
@@ -8,6 +8,12 @@
             "tipo": "soldi_sporchi",
             "causale": "test",
             "valore": 100000000.0
+        },
+        {
+            "data": "18/03/2026 12:36:40",
+            "tipo": "cassa",
+            "causale": "test",
+            "valore": 1111110.0
         }
     ]
 }
