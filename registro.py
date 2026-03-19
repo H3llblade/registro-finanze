@@ -3,7 +3,6 @@ from datetime import datetime
 import requests
 import json
 import base64
-from utils.gestionale import registra_movimento, registra_deposito
 
 st.set_page_config(layout="wide", page_title="Registro Finanze", page_icon="💰")
 
